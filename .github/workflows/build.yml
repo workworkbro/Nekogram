@@ -7,6 +7,7 @@ on:
       - '**.md'
       - '.github/**'
       - '!.github/workflows/build.yml'
+  workflow_call:
   workflow_dispatch:
 
 jobs:
@@ -72,45 +73,15 @@ jobs:
 
       - name: Configure Secrets
         run: |
-          echo "apiId=${{ secrets.API_ID || '4' }}" >> local.properties
-          echo "apiHash=${{ secrets.API_HASH || '014b35b6184100b085b0d0572f9b5103' }}" >> local.properties
+          echo "apiId=${{ secrets.API_ID }}" >> local.properties
+          echo "apiHash=${{ secrets.API_HASH }}" >> local.properties
           echo "helperBotId=${{ secrets.HELPER_BOT_ID }}" >> local.properties
           echo "helperBotUsername=${{ secrets.HELPER_BOT_USERNAME }}" >> local.properties
           echo "sentryDsn=${{ secrets.SENTRY_DSN }}" >> local.properties
           echo "mapsApiKey=${{ secrets.MAPS_API_KEY }}" >> local.properties
-
           if [ -n "${{ secrets.GOOGLE_SERVICES_JSON }}" ]; then
             echo "${{ secrets.GOOGLE_SERVICES_JSON }}" | base64 --decode > TMessagesProj_App/google-services.json
-          else
-            cat << 'JSON' > TMessagesProj_App/google-services.json
-{
-  "project_info": {
-    "project_number": "123456789012",
-    "project_id": "dummy-project",
-    "storage_bucket": "dummy-project.appspot.com"
-  },
-  "client": [
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:123456789012:android:abcdef123456",
-        "android_client_info": {
-          "package_name": "org.telegram.messenger.regular"
-        }
-      },
-      "oauth_client": [],
-      "api_key": [
-        {
-          "current_key": "fake_api_key_dummy"
-        }
-      ],
-      "services": {}
-    }
-  ],
-  "configuration_version": "1"
-}
-JSON
           fi
-          touch sentry.properties
 
       - name: Build with Gradle
         run: |
