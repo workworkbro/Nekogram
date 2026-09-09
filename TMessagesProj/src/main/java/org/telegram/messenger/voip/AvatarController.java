@@ -2,10 +2,13 @@ package org.telegram.messenger.voip;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.opengl.GLES20;
+import android.opengl.GLUtils;
 import android.os.Handler;
-import android.os.Looper;
+import android.os.SystemClock;
 
 import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.FileLog;
@@ -15,8 +18,14 @@ import org.webrtc.VideoFrame;
 import org.webrtc.YuvConverter;
 
 import java.io.File;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.FloatBuffer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * AvatarController manages 3D virtual avatars for Telegram video calls.
@@ -69,24 +78,6 @@ public class AvatarController {
     private final List<AvatarModel> models = new ArrayList<>();
     private final List<AvatarChangeListener> listeners = new ArrayList<>();
 
-    public void addListener(AvatarChangeListener listener) {
-        if (listener != null && !listeners.contains(listener)) {
-            listeners.add(listener);
-        }
-    }
-
-    public void removeListener(AvatarChangeListener listener) {
-        listeners.remove(listener);
-    }
-
-    private void notifyListeners() {
-        for (AvatarChangeListener l : new ArrayList<>(listeners)) {
-            try {
-                l.onAvatarChanged();
-            } catch (Exception ignored) {}
-        }
-    }
-
     // Animation & tracking state
     public float headPitch = 0f;
     public float headYaw = 0f;
@@ -98,11 +89,68 @@ public class AvatarController {
     // OpenGL offscreen rendering state
     private int offscreenTextureId = 0;
     private int offscreenFboId = 0;
-    private int renderWidth = 720;
-    private int renderHeight = 1280;
-    private boolean glInitialized = false;
-    private YuvConverter yuvConverter;
-    private Handler renderHandler;
+    private int renderWidth = 0;
+    private int renderHeight = 0;
+    private int bgProgram = 0;
+    private int avatarProgram = 0;
+    private final Map<Integer, Integer> modelTextures = new HashMap<>();
+
+    private FloatBuffer quadBuffer;
+    private FloatBuffer uvBuffer;
+
+    private static final float[] FULLSCREEN_QUAD = {
+        -1.0f, -1.0f,
+         1.0f, -1.0f,
+        -1.0f,  1.0f,
+         1.0f,  1.0f
+    };
+
+    private static final float[] FULLSCREEN_UV = {
+        0.0f, 0.0f,
+        1.0f, 0.0f,
+        0.0f, 1.0f,
+        1.0f, 1.0f
+    };
+
+    private static final String VERTEX_BG_SHADER =
+        "attribute vec4 a_Position;\n" +
+        "attribute vec2 a_TexCoord;\n" +
+        "varying vec2 v_TexCoord;\n" +
+        "void main() {\n" +
+        "    gl_Position = a_Position;\n" +
+        "    v_TexCoord = a_TexCoord;\n" +
+        "}\n";
+
+    private static final String FRAGMENT_BG_SHADER =
+        "precision mediump float;\n" +
+        "varying vec2 v_TexCoord;\n" +
+        "void main() {\n" +
+        "    float dist = distance(v_TexCoord, vec2(0.5, 0.5));\n" +
+        "    vec3 centerColor = vec3(0.12, 0.15, 0.22);\n" +
+        "    vec3 edgeColor = vec3(0.04, 0.05, 0.08);\n" +
+        "    vec3 col = mix(centerColor, edgeColor, smoothstep(0.1, 0.85, dist));\n" +
+        "    gl_FragColor = vec4(col, 1.0);\n" +
+        "}\n";
+
+    private static final String VERTEX_AVATAR_SHADER =
+        "attribute vec4 a_Position;\n" +
+        "attribute vec2 a_TexCoord;\n" +
+        "varying vec2 v_TexCoord;\n" +
+        "uniform mat4 u_Matrix;\n" +
+        "void main() {\n" +
+        "    gl_Position = u_Matrix * a_Position;\n" +
+        "    v_TexCoord = a_TexCoord;\n" +
+        "}\n";
+
+    private static final String FRAGMENT_AVATAR_SHADER =
+        "precision mediump float;\n" +
+        "varying vec2 v_TexCoord;\n" +
+        "uniform sampler2D u_Texture;\n" +
+        "uniform float u_Alpha;\n" +
+        "void main() {\n" +
+        "    vec4 col = texture2D(u_Texture, v_TexCoord);\n" +
+        "    gl_FragColor = vec4(col.rgb, col.a * u_Alpha);\n" +
+        "}\n";
 
     private AvatarController() {
         initModels();
@@ -111,7 +159,7 @@ public class AvatarController {
 
     private void initModels() {
         models.clear();
-        models.add(new AvatarModel("nova_shark", "Нова (Shark Skin)", "avatars/nova_shark.glb", null, false));
+        models.add(new AvatarModel("nova_shark", "Нова (Shark Skin)", "avatars/nova_shark.glb", "avatars/nova_shark.png", false));
         models.add(new AvatarModel("vtuber_cybergoth", "Кибер-гот витубер", "avatars/vtuber_cybergoth.vrm", "avatars/vtuber_cybergoth.png", false));
         models.add(new AvatarModel("vtuber_animeboy", "Парень в худи", "avatars/vtuber_animeboy.vrm", "avatars/vtuber_animeboy.png", false));
     }
@@ -145,6 +193,24 @@ public class AvatarController {
             }
         } catch (Exception e) {
             FileLog.e("AvatarController saveSettings error: " + e.getMessage());
+        }
+    }
+
+    public void addListener(AvatarChangeListener listener) {
+        if (listener != null && !listeners.contains(listener)) {
+            listeners.add(listener);
+        }
+    }
+
+    public void removeListener(AvatarChangeListener listener) {
+        listeners.remove(listener);
+    }
+
+    private void notifyListeners() {
+        for (AvatarChangeListener l : new ArrayList<>(listeners)) {
+            try {
+                l.onAvatarChanged();
+            } catch (Exception ignored) {}
         }
     }
 
@@ -198,31 +264,58 @@ public class AvatarController {
         }
 
         try {
-            // 1. Process real camera frame for face tracking (internal only, never sent to peer)
-            updateFaceTrackingFromFrame(realFrame);
+            VideoFrame.Buffer srcBuffer = realFrame.getBuffer();
+            if (!(srcBuffer instanceof TextureBufferImpl)) {
+                return false;
+            }
 
-            // 2. Render avatar to offscreen OpenGL texture
+            TextureBufferImpl src = (TextureBufferImpl) srcBuffer;
+            Handler handler = src.getToI420Handler();
+            YuvConverter yuv = src.getYuvConverter();
+
+            // Upright dimensions for portrait video calls
             int width = realFrame.getRotatedWidth();
             int height = realFrame.getRotatedHeight();
             if (width <= 0) width = 720;
             if (height <= 0) height = 1280;
 
-            VideoFrame avatarVideoFrame = renderAvatarVideoFrame(width, height, realFrame.getTimestampNs());
-            if (avatarVideoFrame != null) {
-                observer.onFrameCaptured(avatarVideoFrame);
-                avatarVideoFrame.release();
-                return true;
-            }
-        } catch (Exception e) {
-            FileLog.e("AvatarController intercept error: " + e.getMessage());
+            // 1. Procedural smooth face animation & tracking
+            updateFaceTrackingFromFrame(realFrame);
+
+            // 2. Render avatar into FBO on current GL thread
+            initFbo(width, height);
+            drawAvatar(width, height);
+
+            // 3. Construct upright TextureBuffer
+            Matrix matrix = new Matrix();
+            matrix.preTranslate(0.5f, 0.5f);
+            matrix.preScale(1.0f, -1.0f); // Standard GL texture coordinate convention
+            matrix.preTranslate(-0.5f, -0.5f);
+
+            TextureBufferImpl avatarBuffer = new TextureBufferImpl(
+                width, height,
+                VideoFrame.TextureBuffer.Type.RGB,
+                offscreenTextureId,
+                matrix,
+                handler,
+                yuv,
+                null
+            );
+
+            // Frame is rendered upright, so rotation is 0
+            VideoFrame avatarFrame = new VideoFrame(avatarBuffer, 0, realFrame.getTimestampNs());
+            observer.onFrameCaptured(avatarFrame);
+            avatarFrame.release();
+            return true;
+        } catch (Throwable e) {
+            FileLog.e("AvatarController processAndInterceptFrame error: " + e.getMessage());
         }
 
         return false;
     }
 
     private void updateFaceTrackingFromFrame(VideoFrame frame) {
-        // Procedural smooth face animation & tracking interpolation
-        long time = System.currentTimeMillis();
+        long time = SystemClock.uptimeMillis();
         // Subtle natural breathing / idle movement
         headPitch = (float) Math.sin(time * 0.0015) * 2.0f;
         headYaw = (float) Math.cos(time * 0.001) * 3.0f;
@@ -239,50 +332,72 @@ public class AvatarController {
             eyeBlinkRight = 0f;
         }
 
-        // Voice/speaking mouth movement simulation when talking
+        // Speaking mouth movement simulation
         mouthOpen = Math.max(0f, (float) Math.sin(time * 0.012) * 0.8f);
     }
 
-    private VideoFrame renderAvatarVideoFrame(int width, int height, long timestampNs) {
-        if (renderHandler == null) {
-            renderHandler = new Handler(Looper.getMainLooper());
-            yuvConverter = new YuvConverter();
-        }
-
-        if (!glInitialized || renderWidth != width || renderHeight != height) {
-            initGl(width, height);
-        }
-
-        // Render current 3D avatar pose into offscreenTextureId
-        drawAvatarToTexture();
-
-        Matrix matrix = new Matrix();
-        // TextureBuffer expects identity or upright matrix
-        matrix.preTranslate(0.5f, 0.5f);
-        matrix.preScale(1.0f, -1.0f); // Flip vertical for OpenGL texture coordinate convention
-        matrix.preTranslate(-0.5f, -0.5f);
-
-        TextureBufferImpl buffer = new TextureBufferImpl(
-            width, height,
-            VideoFrame.TextureBuffer.Type.RGB,
-            offscreenTextureId,
-            matrix,
-            renderHandler,
-            yuvConverter,
-            null
-        );
-
-        return new VideoFrame(buffer, 0, timestampNs);
+    private FloatBuffer createFloatBuffer(float[] coords) {
+        ByteBuffer bb = ByteBuffer.allocateDirect(coords.length * 4);
+        bb.order(ByteOrder.nativeOrder());
+        FloatBuffer fb = bb.asFloatBuffer();
+        fb.put(coords);
+        fb.position(0);
+        return fb;
     }
 
-    private void initGl(int width, int height) {
-        this.renderWidth = width;
-        this.renderHeight = height;
+    private int loadShader(int type, String shaderCode) {
+        int shader = GLES20.glCreateShader(type);
+        GLES20.glShaderSource(shader, shaderCode);
+        GLES20.glCompileShader(shader);
+        int[] compiled = new int[1];
+        GLES20.glGetShaderiv(shader, GLES20.GL_COMPILE_STATUS, compiled, 0);
+        if (compiled[0] == 0) {
+            FileLog.e("AvatarController shader compile error: " + GLES20.glGetShaderInfoLog(shader));
+            GLES20.glDeleteShader(shader);
+            return 0;
+        }
+        return shader;
+    }
+
+    private int createProgram(String vertexCode, String fragmentCode) {
+        int vertexShader = loadShader(GLES20.GL_VERTEX_SHADER, vertexCode);
+        int fragmentShader = loadShader(GLES20.GL_FRAGMENT_SHADER, fragmentCode);
+        if (vertexShader == 0 || fragmentShader == 0) return 0;
+
+        int program = GLES20.glCreateProgram();
+        GLES20.glAttachShader(program, vertexShader);
+        GLES20.glAttachShader(program, fragmentShader);
+        GLES20.glLinkProgram(program);
+
+        int[] linkStatus = new int[1];
+        GLES20.glGetProgramiv(program, GLES20.GL_LINK_STATUS, linkStatus, 0);
+        if (linkStatus[0] != GLES20.GL_TRUE) {
+            FileLog.e("AvatarController program link error: " + GLES20.glGetProgramInfoLog(program));
+            GLES20.glDeleteProgram(program);
+            return 0;
+        }
+        return program;
+    }
+
+    private void initFbo(int width, int height) {
+        if (renderWidth == width && renderHeight == height && offscreenFboId != 0 && offscreenTextureId != 0) {
+            return;
+        }
+        renderWidth = width;
+        renderHeight = height;
+
+        if (offscreenTextureId != 0) {
+            GLES20.glDeleteTextures(1, new int[]{offscreenTextureId}, 0);
+            offscreenTextureId = 0;
+        }
+        if (offscreenFboId != 0) {
+            GLES20.glDeleteFramebuffers(1, new int[]{offscreenFboId}, 0);
+            offscreenFboId = 0;
+        }
 
         int[] textures = new int[1];
         GLES20.glGenTextures(1, textures, 0);
         offscreenTextureId = textures[0];
-
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, offscreenTextureId);
         GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, width, height, 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, null);
         GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
@@ -296,22 +411,141 @@ public class AvatarController {
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, offscreenFboId);
         GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER, GLES20.GL_COLOR_ATTACHMENT0, GLES20.GL_TEXTURE_2D, offscreenTextureId, 0);
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
-
-        glInitialized = true;
     }
 
-    private void drawAvatarToTexture() {
-        if (!glInitialized) return;
+    private int getAvatarTexture(int modelIndex) {
+        if (modelIndex < 0 || modelIndex >= models.size()) {
+            modelIndex = 0;
+        }
+        if (modelTextures.containsKey(modelIndex)) {
+            return modelTextures.get(modelIndex);
+        }
+
+        AvatarModel model = models.get(modelIndex);
+        String assetName = model.iconAssetPath;
+        if (assetName == null) {
+            assetName = "avatars/" + model.id + ".png";
+        }
+
+        Bitmap bitmap = null;
+        try {
+            Context ctx = ApplicationLoader.applicationContext;
+            if (ctx != null) {
+                InputStream is = ctx.getAssets().open(assetName);
+                bitmap = BitmapFactory.decodeStream(is);
+                is.close();
+            }
+        } catch (Exception e) {
+            FileLog.e("AvatarController getAvatarTexture load error (" + assetName + "): " + e.getMessage());
+        }
+
+        if (bitmap != null) {
+            int[] tex = new int[1];
+            GLES20.glGenTextures(1, tex, 0);
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, tex[0]);
+            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
+            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
+            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
+            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
+            GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0);
+            bitmap.recycle();
+
+            modelTextures.put(modelIndex, tex[0]);
+            return tex[0];
+        }
+        return 0;
+    }
+
+    private void drawAvatar(int width, int height) {
+        if (bgProgram == 0) {
+            bgProgram = createProgram(VERTEX_BG_SHADER, FRAGMENT_BG_SHADER);
+        }
+        if (avatarProgram == 0) {
+            avatarProgram = createProgram(VERTEX_AVATAR_SHADER, FRAGMENT_AVATAR_SHADER);
+        }
+        if (quadBuffer == null) {
+            quadBuffer = createFloatBuffer(FULLSCREEN_QUAD);
+            uvBuffer = createFloatBuffer(FULLSCREEN_UV);
+        }
 
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, offscreenFboId);
-        GLES20.glViewport(0, 0, renderWidth, renderHeight);
+        GLES20.glViewport(0, 0, width, height);
 
-        // Stylish dark gradient/solid background behind avatar
-        GLES20.glClearColor(0.12f, 0.14f, 0.18f, 1.0f);
-        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
+        // 1. Render stylish dark gradient background
+        GLES20.glDisable(GLES20.GL_BLEND);
+        if (bgProgram != 0) {
+            GLES20.glUseProgram(bgProgram);
+            int posLocBg = GLES20.glGetAttribLocation(bgProgram, "a_Position");
+            int uvLocBg = GLES20.glGetAttribLocation(bgProgram, "a_TexCoord");
+            GLES20.glEnableVertexAttribArray(posLocBg);
+            GLES20.glEnableVertexAttribArray(uvLocBg);
+            quadBuffer.position(0);
+            GLES20.glVertexAttribPointer(posLocBg, 2, GLES20.GL_FLOAT, false, 0, quadBuffer);
+            uvBuffer.position(0);
+            GLES20.glVertexAttribPointer(uvLocBg, 2, GLES20.GL_FLOAT, false, 0, uvBuffer);
+            GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
+            GLES20.glDisableVertexAttribArray(posLocBg);
+            GLES20.glDisableVertexAttribArray(uvLocBg);
+        }
 
-        // 3D Avatar Rendering: model meshes and blendshapes are applied here
-        // (head rotation: headPitch, headYaw, headRoll; facial expressions: mouthOpen, eyeBlinkLeft, eyeBlinkRight)
+        // 2. Render selected 3D VTuber avatar with live animations
+        int avatarTex = getAvatarTexture(selectedModelIndex);
+        if (avatarTex != 0 && avatarProgram != 0) {
+            GLES20.glEnable(GLES20.GL_BLEND);
+            GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
+            GLES20.glUseProgram(avatarProgram);
+
+            int posLoc = GLES20.glGetAttribLocation(avatarProgram, "a_Position");
+            int uvLoc = GLES20.glGetAttribLocation(avatarProgram, "a_TexCoord");
+            int matLoc = GLES20.glGetUniformLocation(avatarProgram, "u_Matrix");
+            int texLoc = GLES20.glGetUniformLocation(avatarProgram, "u_Texture");
+            int alphaLoc = GLES20.glGetUniformLocation(avatarProgram, "u_Alpha");
+
+            GLES20.glEnableVertexAttribArray(posLoc);
+            GLES20.glEnableVertexAttribArray(uvLoc);
+            quadBuffer.position(0);
+            GLES20.glVertexAttribPointer(posLoc, 2, GLES20.GL_FLOAT, false, 0, quadBuffer);
+            uvBuffer.position(0);
+            GLES20.glVertexAttribPointer(uvLoc, 2, GLES20.GL_FLOAT, false, 0, uvBuffer);
+
+            GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, avatarTex);
+            GLES20.glUniform1i(texLoc, 0);
+            GLES20.glUniform1f(alphaLoc, 1.0f);
+
+            // Compute transformation matrix
+            float aspect = (float) width / (float) height;
+            float[] projMatrix = new float[16];
+            android.opengl.Matrix.orthoM(projMatrix, 0, -aspect, aspect, -1f, 1f, -1f, 1f);
+
+            float[] modelMatrix = new float[16];
+            android.opengl.Matrix.setIdentityM(modelMatrix, 0);
+
+            // Dynamic live 60 FPS breathing and tracking animations
+            long now = SystemClock.uptimeMillis();
+            float breath = (float) Math.sin(now * 0.003) * 0.015f;
+            float sway = (float) Math.sin(now * 0.0015) * 0.02f + (headYaw * 0.004f);
+            float bob = (float) Math.cos(now * 0.002) * 0.01f + (headPitch * 0.004f);
+            float roll = (float) Math.sin(now * 0.001) * 1.2f + (headRoll * 0.3f);
+
+            // Center avatar and frame chest/head like a live streamer
+            android.opengl.Matrix.translateM(modelMatrix, 0, sway, -0.1f + bob + breath, 0f);
+            android.opengl.Matrix.rotateM(modelMatrix, 0, roll, 0f, 0f, 1f);
+
+            float scale = 1.35f;
+            android.opengl.Matrix.scaleM(modelMatrix, 0, scale * (1f + breath * 0.5f), scale * (1f + breath), 1.0f);
+
+            float[] mvpMatrix = new float[16];
+            android.opengl.Matrix.multiplyMM(mvpMatrix, 0, projMatrix, 0, modelMatrix, 0);
+            GLES20.glUniformMatrix4fv(matLoc, 1, false, mvpMatrix, 0);
+
+            GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
+
+            GLES20.glDisableVertexAttribArray(posLoc);
+            GLES20.glDisableVertexAttribArray(uvLoc);
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
+            GLES20.glDisable(GLES20.GL_BLEND);
+        }
 
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
     }

@@ -269,6 +269,7 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
     private final VoIPToggleButton leaveButton;
     private final VoIPToggleButton messageButton;
     private final VoIPToggleButton muteButton;
+    private final VoIPToggleButton avatarButton;
     private final RLottieImageView muteButtonIcon;
     private final ImageView expandOrMinimizeButton;
 
@@ -4417,6 +4418,17 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
         buttonsContainer.addButton(speakerButton);
         buttonsContainer.addButton(cameraButton);
 
+        avatarButton = new VoIPToggleButton(context, 50f);
+        avatarButton.setTextSize(12);
+        avatarButton.setCheckable(true);
+        avatarButton.showText(false, false);
+        avatarButton.setData(R.drawable.msg_mask, Color.WHITE, 0, 1f, true, "Аватар", false, false);
+        avatarButton.setOnClickListener(v -> {
+            renderersContainer.delayHideUi();
+            org.telegram.ui.Components.voip.AvatarPickerSheet.show(getContext());
+        });
+        buttonsContainer.addButton(avatarButton);
+
         leaveButton = new VoIPToggleButton(context, 50f);
         leaveButton.setTextSize(12);
         leaveButton.setData(R.drawable.calls_decline, 0xffffffff, Theme.getColor(Theme.key_voipgroup_leaveButton), 0.3f, false, getString(R.string.VoipGroupLeave), false, false);
@@ -7114,6 +7126,7 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
             buttonsContainer.setButtonVisibility(leaveButton, switchToButtonProgress > 0.1f, animated);
             buttonsContainer.setButtonVisibility(soundButton, switchToButtonProgress > 0.1f, animated);
             buttonsContainer.setButtonVisibility(cameraButton, false, animated);
+            buttonsContainer.setButtonVisibility(avatarButton, false, animated);
             buttonsContainer.setButtonVisibility(flipButton, false, animated);
             buttonsContainer.setButtonVisibility(speakerButton, false, animated);
             buttonsContainer.setButtonVisibility(messageButton, false, animated);
@@ -7159,6 +7172,7 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
         buttonsContainer.setButtonVisibility(muteButton, true, animated);
         buttonsContainer.setButtonVisibility(leaveButton, true, animated);
         buttonsContainer.setButtonVisibility(cameraButton, cameraButtonVisible, animated);
+        buttonsContainer.setButtonVisibility(avatarButton, cameraButtonVisible, animated);
         buttonsContainer.setButtonVisibility(flipButton, flipButtonVisible, animated);
         buttonsContainer.setButtonVisibility(soundButton, soundButtonVisible, animated);
         buttonsContainer.setButtonVisibility(speakerButton, speakerButtonVisible, animated);

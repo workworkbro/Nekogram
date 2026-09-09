@@ -187,6 +187,7 @@ public class VoIPFragment implements
     private ImageView addIcon;
     private int speakerPhoneIconResId;
     private ImageView speakerPhoneIcon;
+    private ImageView avatarCallButton;
     private int selectedRating;
     private UserSelectorBottomSheet addPeopleSheet;
 
@@ -504,6 +505,9 @@ public class VoIPFragment implements
         ((FrameLayout.LayoutParams) backIcon.getLayoutParams()).topMargin = lastInsets.getSystemWindowInsetTop();
         ((FrameLayout.LayoutParams) addIcon.getLayoutParams()).topMargin = lastInsets.getSystemWindowInsetTop();
         ((FrameLayout.LayoutParams) speakerPhoneIcon.getLayoutParams()).topMargin = dp(56) + lastInsets.getSystemWindowInsetTop();
+        if (avatarCallButton != null && avatarCallButton.getLayoutParams() instanceof FrameLayout.LayoutParams) {
+            ((FrameLayout.LayoutParams) avatarCallButton.getLayoutParams()).topMargin = dp(62) + lastInsets.getSystemWindowInsetTop();
+        }
         ((FrameLayout.LayoutParams) statusLayout.getLayoutParams()).topMargin = dp(135) + lastInsets.getSystemWindowInsetTop();
         ((FrameLayout.LayoutParams) emojiLayout.getLayoutParams()).topMargin = dp(17) + lastInsets.getSystemWindowInsetTop();
         ((FrameLayout.LayoutParams) callingUserPhotoViewMini.getLayoutParams()).topMargin = dp(93) + lastInsets.getSystemWindowInsetTop();
@@ -884,18 +888,6 @@ public class VoIPFragment implements
         currentUserTextureView.renderer.setMirror(true);
         currentUserCameraFloatingLayout.addView(currentUserTextureView);
 
-        android.widget.ImageView avatarButton = new android.widget.ImageView(context);
-        avatarButton.setImageResource(R.drawable.msg_mask);
-        avatarButton.setColorFilter(android.graphics.Color.WHITE, android.graphics.PorterDuff.Mode.SRC_IN);
-        avatarButton.setBackground(Theme.createCircleDrawable(AndroidUtilities.dp(36), 0x77000000));
-        avatarButton.setPadding(AndroidUtilities.dp(6), AndroidUtilities.dp(6), AndroidUtilities.dp(6), AndroidUtilities.dp(6));
-        avatarButton.setOnClickListener(v -> {
-            if (activity != null) {
-                org.telegram.ui.Components.voip.AvatarPickerSheet.show(activity);
-            }
-        });
-        currentUserCameraFloatingLayout.addView(avatarButton, LayoutHelper.createFrame(36, 36, Gravity.TOP | Gravity.RIGHT, 0, 12, 12, 0));
-
         callingUserMiniFloatingLayout = new VoIPFloatingLayout(context);
         callingUserMiniFloatingLayout.alwaysFloating = true;
         callingUserMiniFloatingLayout.setFloatingMode(true, false);
@@ -1220,6 +1212,20 @@ public class VoIPFragment implements
                 service.toggleSpeakerphoneOrShowRouteSheet(activity, false, selectedSpeaker);
             }
         });
+
+        avatarCallButton = new ImageView(context);
+        avatarCallButton.setImageResource(R.drawable.msg_mask);
+        avatarCallButton.setContentDescription("3D Аватар");
+        avatarCallButton.setColorFilter(new android.graphics.PorterDuffColorFilter(android.graphics.Color.WHITE, android.graphics.PorterDuff.Mode.SRC_IN));
+        avatarCallButton.setBackground(Theme.createCircleDrawable(AndroidUtilities.dp(44), 0x99000000));
+        avatarCallButton.setPadding(AndroidUtilities.dp(8), AndroidUtilities.dp(8), AndroidUtilities.dp(8), AndroidUtilities.dp(8));
+        avatarCallButton.setOnClickListener(v -> {
+            if (activity != null) {
+                org.telegram.ui.Components.voip.AvatarPickerSheet.show(activity);
+            }
+        });
+        ScaleStateListAnimator.apply(avatarCallButton);
+        frameLayout.addView(avatarCallButton, LayoutHelper.createFrame(44, 44, Gravity.TOP | Gravity.RIGHT, 0, 62, 56, 0));
 
         backIcon.setOnClickListener(view -> {
             if (lockOnScreen) return;
