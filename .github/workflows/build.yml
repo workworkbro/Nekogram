@@ -26,6 +26,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: true
+          persist-credentials: true
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -46,7 +47,7 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
         with:
-          packages: "build-tools;37.0.0 ndk;27.3.13750724 platforms;android-37.0 cmake;4.0.2"
+          packages: "build-tools;37.0.0 ndk;27.3.13750724 platforms;android-37.0"
 
       - name: Configure Gradle
         run: |
@@ -74,21 +75,18 @@ jobs:
 
       - name: Configure Secrets
         run: |
-          echo "apiId=${{ secrets.API_ID }}" >> local.properties
-          echo "apiHash=${{ secrets.API_HASH }}" >> local.properties
-          echo "helperBotId=${{ secrets.HELPER_BOT_ID }}" >> local.properties
-          echo "helperBotUsername=${{ secrets.HELPER_BOT_USERNAME }}" >> local.properties
-          echo "sentryDsn=${{ secrets.SENTRY_DSN }}" >> local.properties
-          echo "mapsApiKey=${{ secrets.MAPS_API_KEY }}" >> local.properties
+          if [ -n "${{ secrets.API_ID }}" ]; then echo "apiId=${{ secrets.API_ID }}" >> local.properties; fi
+          if [ -n "${{ secrets.API_HASH }}" ]; then echo "apiHash=${{ secrets.API_HASH }}" >> local.properties; fi
+          if [ -n "${{ secrets.HELPER_BOT_ID }}" ]; then echo "helperBotId=${{ secrets.HELPER_BOT_ID }}" >> local.properties; fi
+          if [ -n "${{ secrets.HELPER_BOT_USERNAME }}" ]; then echo "helperBotUsername=${{ secrets.HELPER_BOT_USERNAME }}" >> local.properties; fi
+          if [ -n "${{ secrets.SENTRY_DSN }}" ]; then echo "sentryDsn=${{ secrets.SENTRY_DSN }}" >> local.properties; fi
+          if [ -n "${{ secrets.MAPS_API_KEY }}" ]; then echo "mapsApiKey=${{ secrets.MAPS_API_KEY }}" >> local.properties; fi
 
-          # Create placeholder google-services.json (gitignored, so must be created at build time)
-          cat > TMessagesProj_App/google-services.json << 'JSON'
-          {
-            "project_info": { "project_number": "0", "project_id": "none", "storage_bucket": "" },
-            "client": [{ "client_info": { "mobilesdk_app_id": "1:0:android:0", "android_client_info": { "package_name": "org.telegram.messenger.regular" } }, "oauth_client": [], "api_key": [{ "current_key": "" }], "services": {} }],
-            "configuration_version": "1"
-          }
-          JSON
+          if [ -n "${{ secrets.GOOGLE_SERVICES_JSON }}" ]; then
+            echo "${{ secrets.GOOGLE_SERVICES_JSON }}" | base64 --decode > TMessagesProj_App/google-services.json
+          else
+            echo '{"project_info":{"project_number":"0","project_id":"none","storage_bucket":""},"client":[{"client_info":{"mobilesdk_app_id":"1:0:android:0","android_client_info":{"package_name":"org.telegram.messenger.regular"}},"oauth_client":[],"api_key":[{"current_key":""}],"services":{}}],"configuration_version":"1"}' > TMessagesProj_App/google-services.json
+          fi
           touch sentry.properties
 
       - name: Free disk space
@@ -99,9 +97,20 @@ jobs:
 
       - name: Build with Gradle
         run: |
-          ./gradlew assembleRelease -x bundlePlay -x sentryUploadSourceBundlePlay --no-daemon
+          ./gradlew assembleRelease -x bundlePlay -x sentryUploadSourceBundlePlay --no-daemon --stacktrace 2>&1 | tee build.log
+
+      - name: Save build log on failure
+        if: failure()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -B build-log
+          git add -f build.log
+          git commit -m "Build failure log [skip ci]" || true
+          git push -f origin build-log || true
 
       - name: Upload arm64-v8a build apk
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: Nekogram-arm64-v8a
