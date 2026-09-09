@@ -129,9 +129,9 @@ android {
     }
 
     def rawApiId = localProperties.getProperty("apiId")
-    def safeApiId = (rawApiId != null && !rawApiId.trim().isEmpty()) ? rawApiId.trim() : "4"
+    def safeApiId = (rawApiId != null && !rawApiId.trim().isEmpty()) ? rawApiId.trim() : "6"
     def rawApiHash = localProperties.getProperty("apiHash")
-    def safeApiHash = (rawApiHash != null && !rawApiHash.trim().isEmpty() && rawApiHash != "null") ? rawApiHash.trim() : "014b35b6184100b085b0d0572f9b5103"
+    def safeApiHash = (rawApiHash != null && !rawApiHash.trim().isEmpty() && rawApiHash != "null") ? rawApiHash.trim() : "eb06d4abfb49dc3eeb1aeb98ae0f581e"
     def rawHelperBotId = localProperties.getProperty("helperBotId")
     def safeHelperBotId = (rawHelperBotId != null && !rawHelperBotId.trim().isEmpty()) ? rawHelperBotId.trim() : "0"
     def safeHelperBotUsername = localProperties.getProperty("helperBotUsername") ?: ""
