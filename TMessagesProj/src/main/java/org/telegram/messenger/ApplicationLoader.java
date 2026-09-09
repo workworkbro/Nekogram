@@ -89,16 +89,68 @@ public class ApplicationLoader extends Application {
         super.attachBaseContext(base);
         Thread.setDefaultUncaughtExceptionHandler((thread, exception) -> {
             try {
-                android.util.Log.e("NEKO_FATAL", "FATAL EXCEPTION", exception);
-                java.io.File downloadDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS);
-                if (downloadDir != null) {
-                    java.io.File file = new java.io.File(downloadDir, "nekogram_crash.txt");
-                    java.io.PrintWriter pw = new java.io.PrintWriter(new java.io.FileWriter(file));
-                    exception.printStackTrace(pw);
-                    pw.flush();
-                    pw.close();
-                }
-            } catch (Throwable ignored) {}
+                java.io.StringWriter sw = new java.io.StringWriter();
+                java.io.PrintWriter pw = new java.io.PrintWriter(sw);
+                exception.printStackTrace(pw);
+                String stackTrace = sw.toString();
+                android.util.Log.e("NEKO_FATAL", stackTrace);
+
+                // 1. Copy to clipboard
+                try {
+                    android.content.ClipboardManager cm = (android.content.ClipboardManager) base.getSystemService(Context.CLIPBOARD_SERVICE);
+                    if (cm != null) {
+                        cm.setPrimaryClip(android.content.ClipData.newPlainText("Crash Log", stackTrace));
+                    }
+                } catch (Throwable ignored) {}
+
+                // 2. Write to MediaStore Downloads
+                try {
+                    android.content.ContentResolver resolver = base.getContentResolver();
+                    android.content.ContentValues cv = new android.content.ContentValues();
+                    cv.put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, "nekogram_crash.txt");
+                    cv.put(android.provider.MediaStore.MediaColumns.MIME_TYPE, "text/plain");
+                    cv.put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, android.os.Environment.DIRECTORY_DOWNLOADS);
+                    android.net.Uri uri = resolver.insert(android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, cv);
+                    if (uri != null) {
+                        java.io.OutputStream os = resolver.openOutputStream(uri);
+                        if (os != null) {
+                            os.write(stackTrace.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                            os.flush();
+                            os.close();
+                        }
+                    }
+                } catch (Throwable ignored) {}
+
+                // 3. Write to internal and external app filesDir
+                try {
+                    java.io.File ext = base.getExternalFilesDir(null);
+                    if (ext != null) {
+                        java.io.File f = new java.io.File(ext, "nekogram_crash.txt");
+                        java.io.FileWriter fw = new java.io.FileWriter(f);
+                        fw.write(stackTrace);
+                        fw.close();
+                    }
+                } catch (Throwable ignored) {}
+                try {
+                    java.io.File f = new java.io.File(base.getFilesDir(), "nekogram_crash.txt");
+                    java.io.FileWriter fw = new java.io.FileWriter(f);
+                    fw.write(stackTrace);
+                    fw.close();
+                } catch (Throwable ignored) {}
+
+                // 4. Launch isolated CrashReportActivity
+                try {
+                    android.content.Intent intent = new android.content.Intent(base, Class.forName("tw.nekomimi.nekogram.CrashReportActivity"));
+                    intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK | android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    intent.putExtra("crash_text", stackTrace);
+                    base.startActivity(intent);
+                } catch (Throwable ignored) {}
+
+                android.os.Process.killProcess(android.os.Process.myPid());
+                System.exit(10);
+            } catch (Throwable t) {
+                t.printStackTrace();
+            }
         });
         try {
             FirebaseFix.check(base);

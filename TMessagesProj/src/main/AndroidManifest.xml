@@ -863,10 +863,12 @@
             android:name="io.sentry.ndk.SentryNdkPreloadProvider"
             android:authorities="${applicationId}.SentryNdkPreloadProvider"
             tools:node="remove" />
-        <provider
-            android:name="com.google.firebase.provider.FirebaseInitProvider"
-            android:authorities="${applicationId}.firebaseinitprovider"
-            tools:node="remove" />
+        <activity
+            android:name="tw.nekomimi.nekogram.CrashReportActivity"
+            android:process=":crash"
+            android:exported="false"
+            android:theme="@android:style/Theme.DeviceDefault.Light"
+            android:label="Nekogram Error" />
 
         <!-- https://issuetracker.google.com/issues/476788722 -->
         <uses-library android:name="org.apache.http.legacy" android:required="false" />
