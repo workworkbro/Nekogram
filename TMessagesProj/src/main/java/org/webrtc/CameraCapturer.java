@@ -164,7 +164,9 @@ abstract class CameraCapturer implements CameraVideoCapturer {
           firstFrameObserved = true;
         }
         cameraStatistics.addFrame();
-        capturerObserver.onFrameCaptured(frame);
+        if (!org.telegram.messenger.voip.AvatarController.getInstance().processAndInterceptFrame(frame, capturerObserver)) {
+          capturerObserver.onFrameCaptured(frame);
+        }
       }
     }
   };
