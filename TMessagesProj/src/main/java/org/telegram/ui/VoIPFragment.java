@@ -884,6 +884,18 @@ public class VoIPFragment implements
         currentUserTextureView.renderer.setMirror(true);
         currentUserCameraFloatingLayout.addView(currentUserTextureView);
 
+        android.widget.ImageView avatarButton = new android.widget.ImageView(context);
+        avatarButton.setImageResource(R.drawable.msg_mask);
+        avatarButton.setColorFilter(android.graphics.Color.WHITE, android.graphics.PorterDuff.Mode.SRC_IN);
+        avatarButton.setBackground(Theme.createCircleDrawable(AndroidUtilities.dp(36), 0x77000000));
+        avatarButton.setPadding(AndroidUtilities.dp(6), AndroidUtilities.dp(6), AndroidUtilities.dp(6), AndroidUtilities.dp(6));
+        avatarButton.setOnClickListener(v -> {
+            if (activity != null) {
+                org.telegram.ui.Components.voip.AvatarPickerSheet.show(activity);
+            }
+        });
+        currentUserCameraFloatingLayout.addView(avatarButton, LayoutHelper.createFrame(36, 36, Gravity.TOP | Gravity.RIGHT, 0, 12, 12, 0));
+
         callingUserMiniFloatingLayout = new VoIPFloatingLayout(context);
         callingUserMiniFloatingLayout.alwaysFloating = true;
         callingUserMiniFloatingLayout.setFloatingMode(true, false);

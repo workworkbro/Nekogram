@@ -43,6 +43,7 @@ public class NekoGeneralSettingsActivity extends BaseNekoSettingsActivity {
 
     private final int disabledInstantCameraRow = rowId++;
     private final int askBeforeCallRow = rowId++;
+    private final int avatarSettingsRow = rowId++;
     private final int openArchiveOnPullRow = rowId++;
 
     private CharSequence getTranslationProvider() {
@@ -164,6 +165,7 @@ public class NekoGeneralSettingsActivity extends BaseNekoSettingsActivity {
         items.add(UItem.asShadow(LocaleController.getString(R.string.IdTypeAbout)));
 
         items.add(UItem.asHeader(LocaleController.getString(R.string.General)));
+        items.add(TextSettingsCellFactory.of(avatarSettingsRow, "3D Аватар в видеозвонках", org.telegram.messenger.voip.AvatarController.getInstance().isAvatarEnabled() ? org.telegram.messenger.voip.AvatarController.getInstance().getModels().get(org.telegram.messenger.voip.AvatarController.getInstance().getSelectedModelIndex()).name : "Выключен").slug("avatarSettings"));
         items.add(UItem.asCheck(disabledInstantCameraRow, LocaleController.getString(R.string.DisableInstantCamera)).slug("disabledInstantCamera").setChecked(NekoConfig.disableInstantCamera));
         items.add(UItem.asCheck(askBeforeCallRow, LocaleController.getString(R.string.AskBeforeCalling)).slug("askBeforeCall").setChecked(NekoConfig.askBeforeCall));
         items.add(UItem.asCheck(openArchiveOnPullRow, LocaleController.getString(R.string.OpenArchiveOnPull)).slug("openArchiveOnPull").setChecked(NekoConfig.openArchiveOnPull));
@@ -226,6 +228,8 @@ public class NekoGeneralSettingsActivity extends BaseNekoSettingsActivity {
             if (view instanceof TextCheckCell) {
                 ((TextCheckCell) view).setChecked(NekoConfig.openArchiveOnPull);
             }
+        } else if (id == avatarSettingsRow) {
+            org.telegram.ui.Components.voip.AvatarPickerSheet.show(getParentActivity());
         } else if (id == askBeforeCallRow) {
             NekoConfig.toggleAskBeforeCall();
             if (view instanceof TextCheckCell) {

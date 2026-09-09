@@ -59,10 +59,33 @@ public class AvatarController {
         }
     }
 
+    public interface AvatarChangeListener {
+        void onAvatarChanged();
+    }
+
     private boolean avatarEnabled = true;
     private int selectedModelIndex = 0;
     private String customModelPath = null;
     private final List<AvatarModel> models = new ArrayList<>();
+    private final List<AvatarChangeListener> listeners = new ArrayList<>();
+
+    public void addListener(AvatarChangeListener listener) {
+        if (listener != null && !listeners.contains(listener)) {
+            listeners.add(listener);
+        }
+    }
+
+    public void removeListener(AvatarChangeListener listener) {
+        listeners.remove(listener);
+    }
+
+    private void notifyListeners() {
+        for (AvatarChangeListener l : new ArrayList<>(listeners)) {
+            try {
+                l.onAvatarChanged();
+            } catch (Exception ignored) {}
+        }
+    }
 
     // Animation & tracking state
     public float headPitch = 0f;
@@ -132,6 +155,7 @@ public class AvatarController {
     public void setAvatarEnabled(boolean enabled) {
         this.avatarEnabled = enabled;
         saveSettings();
+        notifyListeners();
     }
 
     public List<AvatarModel> getModels() {
@@ -146,6 +170,7 @@ public class AvatarController {
         if (index >= 0 && index < models.size()) {
             this.selectedModelIndex = index;
             saveSettings();
+            notifyListeners();
         }
     }
 
@@ -157,6 +182,7 @@ public class AvatarController {
             selectedModelIndex = models.size() - 1;
         }
         saveSettings();
+        notifyListeners();
     }
 
     /**

@@ -99,23 +99,25 @@ jobs:
         run: |
           ./gradlew :TMessagesProj_App:assembleRelease --no-daemon --stacktrace 2>&1 | tee build.log
 
+      - name: Locate APKs
+        if: always()
+        run: |
+          mkdir -p final_apks
+          find . -type f -name "*.apk" -exec cp -v {} final_apks/ \;
+          ls -la final_apks/
+
       - name: Debug and Push Outputs
         if: always()
         run: |
           find . -name "*.apk" -o -name "*.aab" -o -name "*Nekogram*" | head -n 100 > build_files.txt || true
-          tail -n 100 build.log > build_tail.txt || true
+          grep -B 15 -A 40 "FAILURE: Build failed with an exception." build.log > build_tail.txt || tail -n 250 build.log > build_tail.txt || true
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git checkout -B debug-info
           git add -f build_files.txt build_tail.txt
           git commit -m "Debug info [skip ci]" || true
           git push -f origin debug-info || true
-
-      - name: Locate APKs
-        run: |
-          mkdir -p final_apks
-          find . -type f -name "*.apk" -exec cp -v {} final_apks/ \;
-          ls -la final_apks/
+          git checkout - || true
 
       - name: Upload arm64-v8a build apk
         if: success()
