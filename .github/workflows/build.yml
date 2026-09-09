@@ -97,7 +97,7 @@ jobs:
 
       - name: Build with Gradle
         run: |
-          ./gradlew assembleRelease -x bundlePlay -x sentryUploadSourceBundlePlay --no-daemon --stacktrace 2>&1 | tee build.log
+          ./gradlew :TMessagesProj_App:assembleRelease --no-daemon --stacktrace 2>&1 | tee build.log
 
       - name: Save build log on failure
         if: failure()
@@ -109,13 +109,16 @@ jobs:
           git commit -m "Build failure log [skip ci]" || true
           git push -f origin build-log || true
 
-      - name: List outputs
+      - name: Locate APKs
         run: |
-          find TMessagesProj_App/build/outputs -type f || true
+          mkdir -p final_apks
+          find . -type f -name "*.apk" -exec cp -v {} final_apks/ \;
+          ls -la final_apks/
 
       - name: Upload arm64-v8a build apk
         if: success()
         uses: actions/upload-artifact@v4
         with:
           name: Nekogram-arm64-v8a
-          path: TMessagesProj_App/build/outputs/**/*.apk
+          path: final_apks/*.apk
+          if-no-files-found: error
