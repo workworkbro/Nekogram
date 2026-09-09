@@ -20,10 +20,7 @@ int tgvoipOnJNILoad(JavaVM *vm, JNIEnv *env);
 jint JNI_OnLoad(JavaVM *vm, void *reserved) {
 	JNIEnv *env = 0;
     srand(time(NULL));
-
-    if (!check_signature()) {
-        return JNI_ERR;
-    }
+    // Anti-tamper check disabled
 
 	if ((*vm)->GetEnv(vm, (void **) &env, JNI_VERSION_1_6) != JNI_OK) {
 		return -1;
