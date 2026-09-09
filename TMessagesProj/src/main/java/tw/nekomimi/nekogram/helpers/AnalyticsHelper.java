@@ -32,6 +32,9 @@ public class AnalyticsHelper {
     public static String userId = null;
 
     public static void start(Application application) {
+        try {
+            preferences = application.getSharedPreferences("nekoanalytics", Application.MODE_PRIVATE);
+        } catch (Exception ignored) {}
         analyticsDisabled = true;
         sendBugReport = false;
         FileLog.d("Analytics: disabled for performance and privacy");
@@ -43,16 +46,6 @@ public class AnalyticsHelper {
 
     public static void trackFragmentLifecycle(String lifecycle, BaseFragment fragment) {
         if (analyticsDisabled || fragment == null) return;
-        var breadcrumb = new Breadcrumb();
-        breadcrumb.setType("navigation");
-        breadcrumb.setCategory("ui.fragment.lifecycle");
-        breadcrumb.setLevel(SentryLevel.INFO);
-        breadcrumb.setData("state", lifecycle);
-        breadcrumb.setData("screen", getFragmentName(fragment));
-        Sentry.addBreadcrumb(breadcrumb);
-        if ("created".equals(lifecycle)) {
-            firebaseAnalytics.logEvent(FirebaseAnalytics.Event.SCREEN_VIEW, null);
-        }
     }
 
     private static String getFragmentName(BaseFragment fragment) {
@@ -62,11 +55,6 @@ public class AnalyticsHelper {
 
     public static void trackEvent(String event, HashMap<String, String> map) {
         if (analyticsDisabled) return;
-        Bundle bundle = new Bundle();
-        for (String key : map.keySet()) {
-            bundle.putString(key, map.get(key));
-        }
-        firebaseAnalytics.logEvent(event, bundle);
     }
 
     public static boolean isSettingsAvailable() {
@@ -75,14 +63,15 @@ public class AnalyticsHelper {
 
     public static void setAnalyticsDisabled() {
         AnalyticsHelper.analyticsDisabled = true;
-        if (BuildConfig.DEBUG) return;
-        FirebaseAnalytics.getInstance(ApplicationLoader.applicationContext).setAnalyticsCollectionEnabled(false);
-        preferences.edit().putBoolean("analyticsDisabled", true).apply();
+        if (preferences != null) {
+            preferences.edit().putBoolean("analyticsDisabled", true).apply();
+        }
     }
 
     public static void toggleSendBugReport() {
         AnalyticsHelper.sendBugReport = !AnalyticsHelper.sendBugReport;
-        if (BuildConfig.DEBUG) return;
-        preferences.edit().putBoolean("sendBugReport", sendBugReport).apply();
+        if (preferences != null) {
+            preferences.edit().putBoolean("sendBugReport", sendBugReport).apply();
+        }
     }
 }

@@ -74,7 +74,6 @@ android {
         multiDexEnabled true
 
         manifestPlaceholders = [MAPS_API_KEY: localProperties.get("mapsApiKey") ?: ""]
-        resourceConfigurations += ['en', 'ru']
     }
 
     bundle {
