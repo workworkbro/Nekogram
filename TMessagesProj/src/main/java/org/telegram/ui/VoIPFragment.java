@@ -902,7 +902,7 @@ public class VoIPFragment implements
         callingUserMiniTextureRenderer = new TextureViewRenderer(context);
         callingUserMiniTextureRenderer.setEnableHardwareScaler(true);
         callingUserMiniTextureRenderer.setIsCamera(false);
-        callingUserMiniTextureRenderer.setFpsReduction(30);
+        callingUserMiniTextureRenderer.setFpsReduction(60);
         callingUserMiniTextureRenderer.setScalingType(RendererCommon.ScalingType.SCALE_ASPECT_FIT);
 
 //        View backgroundView = new View(context);

@@ -31,7 +31,7 @@ public class VideoCapturerDevice {
 
     private static final int CAPTURE_WIDTH = Build.VERSION.SDK_INT <= 19 ? 480 : 1280;
     private static final int CAPTURE_HEIGHT = Build.VERSION.SDK_INT <= 19 ? 320 : 720;
-    private static final int CAPTURE_FPS = 30;
+    private static final int CAPTURE_FPS = 60;
 
     public static EglBase eglBase;
 
