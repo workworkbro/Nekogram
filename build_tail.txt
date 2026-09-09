@@ -1,0 +1,250 @@
+R.raw.qr_matrix — fps=60, frames=180, mono=false
+R.raw.raised_hand — fps=60, frames=90, mono=false
+R.raw.rate — fps=60, frames=90, mono=false
+R.raw.report_police — fps=60, frames=180, mono=false
+R.raw.roundcamera_flash_off — fps=60, frames=30, mono=false
+R.raw.roundcamera_flash_on — fps=60, frames=30, mono=false
+R.raw.roundcamera_flip — fps=60, frames=30, mono=false
+R.raw.safari_30 — fps=60, frames=180, mono=false
+R.raw.sandclock — fps=60, frames=180, mono=false
+R.raw.saved_messages — fps=60, frames=56, mono=false
+R.raw.seek_speed_hint — fps=60, frames=42, mono=false
+R.raw.shared_link_enter — fps=60, frames=43, mono=false
+R.raw.silent_mute — fps=60, frames=58, mono=false
+R.raw.silent_unmute — fps=60, frames=58, mono=false
+R.raw.smile_to_gif — fps=60, frames=12, mono=false
+R.raw.smile_to_keyboard — fps=60, frames=12, mono=false
+R.raw.smile_to_sticker — fps=60, frames=12, mono=false
+R.raw.sms_incoming_info — fps=60, frames=90, mono=false
+R.raw.sound_download — fps=60, frames=66, mono=false
+R.raw.sound_off — fps=60, frames=61, mono=false
+R.raw.sound_on — fps=60, frames=61, mono=false
+R.raw.speaker — fps=60, frames=34, mono=false
+R.raw.speaker_to_bt — fps=60, frames=60, mono=false
+R.raw.speed_15to2 — fps=60, frames=75, mono=false
+R.raw.speed_1to15 — fps=60, frames=75, mono=false
+R.raw.speed_2to1 — fps=60, frames=72, mono=false
+R.raw.speed_fast — fps=60, frames=75, mono=false
+R.raw.speed_limit — fps=60, frames=51, mono=false
+R.raw.speed_slow — fps=60, frames=72, mono=false
+R.raw.star_fill — fps=60, frames=180, mono=false
+R.raw.star_premium_2 — fps=60, frames=50, mono=false
+R.raw.star_reaction — fps=60, frames=163, mono=false
+R.raw.star_reaction_click — fps=60, frames=125, mono=false
+R.raw.star_reaction_effect1 — fps=60, frames=90, mono=false
+R.raw.star_reaction_effect2 — fps=60, frames=83, mono=false
+R.raw.star_reaction_effect3 — fps=60, frames=85, mono=false
+R.raw.star_reaction_effect4 — fps=60, frames=90, mono=false
+R.raw.star_reaction_effect5 — fps=60, frames=90, mono=false
+R.raw.star_stroke — fps=60, frames=180, mono=false
+R.raw.stars_send — fps=60, frames=140, mono=false
+R.raw.stars_topup — fps=60, frames=109, mono=false
+R.raw.statistic_preload — fps=60, frames=180, mono=false
+R.raw.sticker_to_keyboard — fps=60, frames=12, mono=false
+R.raw.sticker_to_smile — fps=60, frames=12, mono=false
+R.raw.stories_intro_go_back — fps=60, frames=40, mono=false
+R.raw.stories_intro_go_forward — fps=60, frames=38, mono=false
+R.raw.stories_intro_go_to_next — fps=60, frames=39, mono=false
+R.raw.stories_intro_pause — fps=60, frames=46, mono=false
+R.raw.story_bomb1 — fps=60, frames=44, mono=false
+R.raw.story_bomb2 — fps=60, frames=51, mono=false
+R.raw.story_repost — fps=60, frames=36, mono=false
+R.raw.sun — fps=60, frames=36, mono=false
+R.raw.sun_outline — fps=60, frames=36, mono=false
+R.raw.swipe_community_ungroup — fps=60, frames=29, mono=false
+R.raw.swipe_delete — fps=60, frames=38, mono=false
+R.raw.swipe_disabled — fps=60, frames=30, mono=false
+R.raw.swipe_mute — fps=60, frames=35, mono=false
+R.raw.swipe_pin — fps=60, frames=31, mono=false
+R.raw.swipe_read — fps=60, frames=35, mono=false
+R.raw.swipe_unmute — fps=60, frames=35, mono=false
+R.raw.swipe_unpin — fps=60, frames=48, mono=false
+R.raw.swipe_unread — fps=60, frames=36, mono=false
+R.raw.tab_article — fps=60, frames=16, mono=false
+R.raw.tab_article_reverse — fps=60, frames=5, mono=false
+R.raw.tab_calls — fps=60, frames=6, mono=false
+R.raw.tab_chats — fps=60, frames=6, mono=false
+R.raw.tab_checklist — fps=60, frames=17, mono=false
+R.raw.tab_checklist_reverse — fps=60, frames=5, mono=false
+R.raw.tab_colors — fps=60, frames=17, mono=false
+R.raw.tab_colors_reverse — fps=60, frames=5, mono=false
+R.raw.tab_contacts — fps=60, frames=6, mono=false
+R.raw.tab_emoji — fps=60, frames=18, mono=false
+R.raw.tab_emoji_reverse — fps=60, frames=5, mono=false
+R.raw.tab_files — fps=60, frames=17, mono=false
+R.raw.tab_files_reverse — fps=60, frames=5, mono=false
+R.raw.tab_gallery — fps=60, frames=17, mono=false
+R.raw.tab_gallery_reverse — fps=60, frames=5, mono=false
+R.raw.tab_gift — fps=60, frames=17, mono=false
+R.raw.tab_gift_reverse — fps=60, frames=5, mono=false
+R.raw.tab_location — fps=60, frames=17, mono=false
+R.raw.tab_location_reverse — fps=60, frames=5, mono=false
+R.raw.tab_models — fps=60, frames=17, mono=false
+R.raw.tab_models_reverse — fps=60, frames=5, mono=false
+R.raw.tab_music — fps=60, frames=17, mono=false
+R.raw.tab_music_reverse — fps=60, frames=5, mono=false
+R.raw.tab_poll — fps=60, frames=17, mono=false
+R.raw.tab_poll_reverse — fps=60, frames=5, mono=false
+R.raw.tab_reply — fps=60, frames=17, mono=false
+R.raw.tab_reply_reverse — fps=60, frames=5, mono=false
+R.raw.tab_settings — fps=60, frames=6, mono=false
+R.raw.tab_sticker — fps=60, frames=17, mono=false
+R.raw.tab_sticker_reverse — fps=60, frames=5, mono=false
+R.raw.tab_symbols — fps=60, frames=17, mono=false
+R.raw.tab_symbols_reverse — fps=60, frames=5, mono=false
+R.raw.tab_wallet — fps=60, frames=17, mono=false
+R.raw.tab_wallet_reverse — fps=60, frames=5, mono=false
+R.raw.tag_icon_3 — fps=60, frames=57, mono=false
+R.raw.ticks_double — fps=60, frames=54, mono=false
+R.raw.ticks_single — fps=60, frames=25, mono=false
+R.raw.timer_3 — fps=60, frames=66, mono=false
+R.raw.timer_toast — fps=60, frames=41, mono=false
+R.raw.topics — fps=60, frames=180, mono=false
+R.raw.topics_list — fps=60, frames=100, mono=false
+R.raw.topics_tabs — fps=60, frames=100, mono=false
+R.raw.topics_top — fps=60, frames=157, mono=false
+R.raw.transcribe — fps=60, frames=180, mono=false
+R.raw.transcribe_in — fps=60, frames=20, mono=false
+R.raw.transcribe_out — fps=60, frames=20, mono=false
+R.raw.tsv_monkey_close — fps=60, frames=98, mono=false
+R.raw.tsv_setup_email_sent — fps=60, frames=180, mono=false
+R.raw.tsv_setup_hint — fps=60, frames=180, mono=false
+R.raw.tsv_setup_intro — fps=60, frames=180, mono=false
+R.raw.tsv_setup_mail — fps=60, frames=160, mono=false
+R.raw.tsv_setup_monkey_close_and_peek — fps=60, frames=33, mono=false
+R.raw.tsv_setup_monkey_close_and_peek_to_idle — fps=60, frames=33, mono=false
+R.raw.tsv_setup_monkey_idle1 — fps=60, frames=30, mono=false
+R.raw.tsv_setup_monkey_idle2 — fps=60, frames=30, mono=false
+R.raw.tsv_setup_monkey_peek — fps=60, frames=33, mono=false
+R.raw.tsv_setup_monkey_tracking — fps=60, frames=180, mono=false
+R.raw.ubuntu_30 — fps=60, frames=180, mono=false
+R.raw.unlock_icon — fps=60, frames=120, mono=false
+R.raw.utyan_cache — fps=60, frames=180, mono=false
+R.raw.utyan_call — fps=60, frames=180, mono=false
+R.raw.utyan_change_number — fps=60, frames=180, mono=false
+R.raw.utyan_draw — fps=60, frames=180, mono=false
+R.raw.utyan_empty — fps=60, frames=180, mono=false
+R.raw.utyan_empty2 — fps=60, frames=180, mono=false
+R.raw.utyan_gallery — fps=60, frames=180, mono=false
+R.raw.utyan_gigagroup — fps=60, frames=150, mono=false
+R.raw.utyan_newborn — fps=60, frames=180, mono=false
+R.raw.utyan_passcode — fps=60, frames=180, mono=false
+R.raw.utyan_private — fps=60, frames=180, mono=false
+R.raw.utyan_saved_messages — fps=60, frames=180, mono=false
+R.raw.utyan_schedule — fps=60, frames=180, mono=false
+R.raw.utyan_streaming — fps=60, frames=180, mono=false
+R.raw.video_stop — fps=60, frames=60, mono=false
+R.raw.voice_and_video — fps=60, frames=60, mono=false
+R.raw.voice_mini — fps=60, frames=172, mono=false
+R.raw.voice_muted — fps=60, frames=29, mono=false
+R.raw.voice_outlined — fps=60, frames=24, mono=false
+R.raw.voice_outlined2 — fps=60, frames=84, mono=false
+R.raw.voice_to_text — fps=60, frames=120, mono=false
+R.raw.voip_allow_talk — fps=60, frames=52, mono=false
+R.raw.voip_filled — fps=60, frames=404, mono=false
+R.raw.voip_invite — fps=60, frames=120, mono=false
+R.raw.voip_muted — fps=60, frames=120, mono=false
+R.raw.voip_record_saved — fps=60, frames=56, mono=false
+R.raw.voip_record_start — fps=60, frames=64, mono=false
+R.raw.voip_unmuted — fps=60, frames=120, mono=false
+R.raw.wallet_allset — fps=60, frames=180, mono=false
+R.raw.wallet_congrats — fps=60, frames=180, mono=false
+R.raw.wallet_perfect — fps=60, frames=120, mono=false
+R.raw.wallet_science — fps=60, frames=180, mono=false
+R.raw.windows_30 — fps=60, frames=180, mono=false
+R.raw.write_contacts_fab_icon — fps=60, frames=49, mono=false
+
+> Task :TMessagesProj:generateReleaseResources FROM-CACHE
+> Task :TMessagesProj_App:mergeReleaseNativeLibs
+> Task :TMessagesProj:packageReleaseResources FROM-CACHE
+> Task :TMessagesProj:processReleaseNavigationResources FROM-CACHE
+> Task :TMessagesProj:parseReleaseLocalResources FROM-CACHE
+> Task :TMessagesProj:generateReleaseRFile FROM-CACHE
+
+> Task :TMessagesProj:generateReleaseTlReaders
+Generated /home/runner/work/Nekogram/Nekogram/TMessagesProj/build/generated/java/generateReleaseTlReaders/tw/nekomimi/nekogram/tlv/TlReaders.java with 609 current readers and 24 legacy readers
+
+> Task :TMessagesProj_App:stripReleaseDebugSymbols
+> Task :TMessagesProj:compileReleaseKotlin NO-SOURCE
+> Task :TMessagesProj_App:extractReleaseNativeDebugMetadata FROM-CACHE
+> Task :TMessagesProj:javaPreCompileRelease FROM-CACHE
+> Task :TMessagesProj_App:mergeReleaseNativeDebugMetadata
+> Task :TMessagesProj:compileReleaseJavaWithJavac
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: Some input files use unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+
+> Task :jlatexmath:bundleLibRuntimeToJarRelease
+> Task :TMessagesProj_App:checkReleaseDuplicateClasses
+> Task :TMessagesProj:bundleLibRuntimeToJarRelease
+> Task :TMessagesProj:bundleLibCompileToJarRelease
+> Task :TMessagesProj_App:generateReleaseBuildConfig FROM-CACHE
+> Task :TMessagesProj_App:generateReleaseResources FROM-CACHE
+> Task :TMessagesProj_App:processReleaseGoogleServices FROM-CACHE
+> Task :TMessagesProj_App:packageReleaseResources FROM-CACHE
+> Task :TMessagesProj_App:processReleaseNavigationResources FROM-CACHE
+> Task :TMessagesProj_App:parseReleaseLocalResources FROM-CACHE
+> Task :TMessagesProj_App:generateReleaseRFile FROM-CACHE
+> Task :TMessagesProj_App:compileReleaseKotlin NO-SOURCE
+> Task :TMessagesProj_App:javaPreCompileRelease FROM-CACHE
+> Task :TMessagesProj_App:compileReleaseJavaWithJavac
+> Task :jlatexmath:mapReleaseSourceSetPaths
+> Task :jlatexmath:compileReleaseLibraryResources FROM-CACHE
+> Task :TMessagesProj:mapReleaseSourceSetPaths
+> Task :TMessagesProj:compileReleaseLibraryResources FROM-CACHE
+> Task :jlatexmath:writeReleaseAarMetadata
+> Task :TMessagesProj:writeReleaseAarMetadata
+> Task :TMessagesProj_App:checkReleaseAarMetadata
+> Task :TMessagesProj_App:mapReleaseSourceSetPaths
+> Task :TMessagesProj_App:compileReleaseNavigationResources FROM-CACHE
+> Task :TMessagesProj_App:mergeReleaseResources FROM-CACHE
+> Task :TMessagesProj_App:createReleaseCompatibleScreenManifests
+> Task :jlatexmath:extractDeepLinksRelease FROM-CACHE
+> Task :jlatexmath:processReleaseManifest FROM-CACHE
+> Task :TMessagesProj:extractDeepLinksRelease FROM-CACHE
+> Task :TMessagesProj:processReleaseManifest FROM-CACHE
+> Task :TMessagesProj_App:extractDeepLinksRelease FROM-CACHE
+> Task :TMessagesProj_App:processReleaseMainManifest FROM-CACHE
+> Task :TMessagesProj_App:processReleaseManifest FROM-CACHE
+> Task :TMessagesProj_App:processReleaseManifestForPackage FROM-CACHE
+> Task :TMessagesProj_App:processReleaseResources FROM-CACHE
+> Task :TMessagesProj_App:dexBuilderRelease
+> Task :TMessagesProj_App:desugarReleaseFileDependencies FROM-CACHE
+> Task :TMessagesProj_App:mergeReleaseStartupProfile
+> Task :TMessagesProj_App:mergeExtDexRelease FROM-CACHE
+> Task :jlatexmath:generateReleaseAssets UP-TO-DATE
+> Task :jlatexmath:mergeReleaseAssets
+> Task :TMessagesProj:generateReleaseAssets UP-TO-DATE
+> Task :TMessagesProj:mergeReleaseAssets
+> Task :TMessagesProj_App:generateReleaseAssets UP-TO-DATE
+> Task :TMessagesProj_App:mergeReleaseAssets
+> Task :TMessagesProj_App:compressReleaseAssets
+> Task :jlatexmath:processReleaseJavaRes NO-SOURCE
+> Task :TMessagesProj:processReleaseJavaRes NO-SOURCE
+> Task :TMessagesProj_App:processReleaseJavaRes NO-SOURCE
+> Task :TMessagesProj_App:mergeReleaseJavaResource
+> Task :TMessagesProj_App:optimizeReleaseResources FROM-CACHE
+> Task :TMessagesProj_App:validateSigningRelease
+> Task :TMessagesProj_App:writeReleaseAppMetadata
+> Task :TMessagesProj_App:writeReleaseSigningConfigVersions
+> Task :TMessagesProj_App:mergeReleaseGlobalSynthetics
+> Task :TMessagesProj_App:mergeDexRelease
+> Task :TMessagesProj_App:l8DexDesugarLibRelease
+> Task :TMessagesProj_App:compileReleaseArtProfile
+> Task :TMessagesProj_App:packageRelease
+> Task :TMessagesProj_App:createReleaseApkListingFileRedirect
+> Task :TMessagesProj_App:assembleRelease
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_5-1788971699128.json
+
+[Incubating] Problems report is available at: file:///home/runner/work/Nekogram/Nekogram/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.7.0/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 15m 31s
+97 actionable tasks: 55 executed, 42 from cache
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.7.0/userguide/configuration_cache_enabling.html

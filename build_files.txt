@@ -1,0 +1,4 @@
+./TMessagesProj_App/build/outputs/apk/release/Nekogram-12.10.1-7038-arm64-v8a.apk
+./TMessagesProj_App/build/outputs/apk/release/baselineProfiles/0/Nekogram-12.10.1-7038-arm64-v8a.dm
+./TMessagesProj_App/build/outputs/apk/release/baselineProfiles/1/Nekogram-12.10.1-7038-arm64-v8a.dm
+./final_apks/Nekogram-12.10.1-7038-arm64-v8a.apk
