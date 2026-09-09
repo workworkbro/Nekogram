@@ -86,6 +86,15 @@ public class AvatarController {
     public float eyeBlinkLeft = 0f;
     public float eyeBlinkRight = 0f;
 
+    private long lastFaceTrackTime = 0;
+    private byte[] lastGrid = null;
+    private static final int GRID_W = 16;
+    private static final int GRID_H = 16;
+    private float targetYaw = 0f;
+    private float targetPitch = 0f;
+    private float targetRoll = 0f;
+    private float targetMouth = 0f;
+
     // OpenGL offscreen rendering state
     private int offscreenTextureId = 0;
     private int offscreenFboId = 0;
@@ -161,7 +170,7 @@ public class AvatarController {
         models.clear();
         models.add(new AvatarModel("vtuber_cybergoth", "Кибер-гот витубер", "avatars/vtuber_cybergoth.vrm", "avatars/vtuber_cybergoth.png", false));
         models.add(new AvatarModel("vtuber_animeboy", "Парень в худи", "avatars/vtuber_animeboy.vrm", "avatars/vtuber_animeboy.png", false));
-        models.add(new AvatarModel("nova_shark", "Нова (Shark Skin)", "avatars/nova_shark.glb", "avatars/nova_shark.png", false));
+        models.add(new AvatarModel("vtuber_schoolgirl", "Аниме-тян (Schoolgirl)", "avatars/vtuber_schoolgirl.vrm", "avatars/vtuber_schoolgirl.png", false));
     }
 
     private void loadSettings() {
@@ -317,26 +326,80 @@ public class AvatarController {
         return false;
     }
 
-    private void updateFaceTrackingFromFrame(VideoFrame frame) {
-        long time = SystemClock.uptimeMillis();
-        // Subtle natural breathing / idle movement
-        headPitch = (float) Math.sin(time * 0.0015) * 2.0f;
-        headYaw = (float) Math.cos(time * 0.001) * 3.0f;
-        headRoll = (float) Math.sin(time * 0.0008) * 1.5f;
+    private void updateFaceTrackingFromFrame(VideoFrame realFrame) {
+        long now = SystemClock.uptimeMillis();
+        // Sample real camera ~15-20 times per second
+        if (now - lastFaceTrackTime >= 50) {
+            lastFaceTrackTime = now;
+            try {
+                VideoFrame.Buffer buffer = realFrame.getBuffer();
+                VideoFrame.I420Buffer i420 = buffer.toI420();
+                if (i420 != null) {
+                    ByteBuffer yBuf = i420.getDataY();
+                    int stride = i420.getStrideY();
+                    int w = i420.getWidth();
+                    int h = i420.getHeight();
 
-        // Blinking simulation (natural blinks every ~3.5 seconds)
-        long blinkCycle = time % 3500;
-        if (blinkCycle < 150) {
-            float blinkProgress = (float) Math.sin((blinkCycle / 150.0) * Math.PI);
-            eyeBlinkLeft = blinkProgress;
-            eyeBlinkRight = blinkProgress;
-        } else {
-            eyeBlinkLeft = 0f;
-            eyeBlinkRight = 0f;
+                    byte[] currentGrid = new byte[GRID_W * GRID_H];
+                    int stepX = w / (GRID_W + 1);
+                    int stepY = h / (GRID_H + 1);
+
+                    float sumL = 0;
+                    float sumX = 0;
+                    float sumY = 0;
+                    float totalMotion = 0;
+                    float mouthMotion = 0;
+
+                    for (int gy = 0; gy < GRID_H; gy++) {
+                        int py = (gy + 1) * stepY;
+                        int rowOffset = py * stride;
+                        for (int gx = 0; gx < GRID_W; gx++) {
+                            int px = (gx + 1) * stepX;
+                            int l = yBuf.get(rowOffset + px) & 0xFF;
+                            int idx = gy * GRID_W + gx;
+                            currentGrid[idx] = (byte) l;
+
+                            sumL += l;
+                            sumX += gx * l;
+                            sumY += gy * l;
+
+                            if (lastGrid != null) {
+                                int diff = Math.abs(l - (lastGrid[idx] & 0xFF));
+                                totalMotion += diff;
+                                if (gy >= 9 && gy <= 14 && gx >= 4 && gx <= 11) {
+                                    mouthMotion += diff;
+                                }
+                            }
+                        }
+                    }
+                    lastGrid = currentGrid;
+                    i420.release();
+
+                    if (sumL > 0) {
+                        float cx = (sumX / sumL) / (GRID_W - 1);
+                        float cy = (sumY / sumL) / (GRID_H - 1);
+
+                        // Front camera is mirrored, so invert horizontal movement
+                        float normX = (0.5f - cx) * 3.2f;
+                        float normY = (cy - 0.5f) * 2.8f;
+
+                        targetYaw = Math.max(-1.0f, Math.min(1.0f, normX));
+                        targetPitch = Math.max(-1.0f, Math.min(1.0f, normY));
+                        targetRoll = targetYaw * 0.5f;
+
+                        float avgMouthMotion = mouthMotion / 36.0f;
+                        targetMouth = Math.max(0f, Math.min(1.0f, (avgMouthMotion - 3.0f) / 12.0f));
+                    }
+                }
+            } catch (Throwable ignored) {
+            }
         }
 
-        // Speaking mouth movement simulation
-        mouthOpen = Math.max(0f, (float) Math.sin(time * 0.012) * 0.8f);
+        // Smooth responsive interpolation
+        headYaw += (targetYaw - headYaw) * 0.20f;
+        headPitch += (targetPitch - headPitch) * 0.20f;
+        headRoll += (targetRoll - headRoll) * 0.20f;
+        mouthOpen += (targetMouth - mouthOpen) * 0.30f;
     }
 
     private FloatBuffer createFloatBuffer(float[] coords) {
@@ -555,23 +618,33 @@ public class AvatarController {
             float[] modelMatrix = new float[16];
             android.opengl.Matrix.setIdentityM(modelMatrix, 0);
 
-            // Dynamic live 60 FPS breathing and tracking animations
-            long now = SystemClock.uptimeMillis();
-            float breath = (float) Math.sin(now * 0.003) * 0.012f;
-            float sway = (float) Math.sin(now * 0.0015) * 0.015f + (headYaw * 0.003f);
-            float bob = (float) Math.cos(now * 0.002) * 0.008f + (headPitch * 0.003f);
-            float roll = (float) Math.sin(now * 0.001) * 0.8f + (headRoll * 0.2f);
+            // 1. User real camera tracking (responsive lateral and vertical movement)
+            float userSway = headYaw * 0.16f;
+            float userBob = -headPitch * 0.12f;
+            float userRoll = headRoll * 7.0f;
+            float userScale = 1.0f + (mouthOpen * 0.05f);
 
-            // Center avatar and frame chest/head like a live streamer
-            android.opengl.Matrix.translateM(modelMatrix, 0, sway, bob + breath, 0f);
-            android.opengl.Matrix.rotateM(modelMatrix, 0, roll, 0f, 0f, 1f);
+            // 2. Lifelike idle breathing micro-motion
+            long now = SystemClock.uptimeMillis();
+            float idleBreath = (float) Math.sin(now * 0.0025) * 0.010f;
+            float idleSway = (float) Math.sin(now * 0.0012) * 0.012f;
+            float idleRoll = (float) Math.cos(now * 0.0010) * 0.7f;
+
+            // Combine real user motion with subtle idle lifelike motion
+            float finalX = userSway + idleSway;
+            float finalY = userBob + idleBreath;
+            float finalRoll = userRoll + idleRoll;
+
+            // Center avatar and apply motion
+            android.opengl.Matrix.translateM(modelMatrix, 0, finalX, finalY, 0f);
+            android.opengl.Matrix.rotateM(modelMatrix, 0, finalRoll, 0f, 0f, 1f);
 
             // Maintain exact aspect ratio without distortion
             float texAspect = 720f / 1280f;
             float vpAspect = (float) width / (float) height;
-            float scale = 1.03f;
-            float scaleX = scale * (1f + breath * 0.01f);
-            float scaleY = scale * (1f + breath * 0.01f);
+            float scale = 1.04f * userScale;
+            float scaleX = scale;
+            float scaleY = scale;
             if (vpAspect > texAspect) {
                 scaleX *= (texAspect / vpAspect);
             } else {
