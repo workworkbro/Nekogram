@@ -87,7 +87,22 @@ public class ApplicationLoader extends Application {
     @Override
     protected void attachBaseContext(Context base) {
         super.attachBaseContext(base);
-        FirebaseFix.check(base);
+        Thread.setDefaultUncaughtExceptionHandler((thread, exception) -> {
+            try {
+                android.util.Log.e("NEKO_FATAL", "FATAL EXCEPTION", exception);
+                java.io.File downloadDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS);
+                if (downloadDir != null) {
+                    java.io.File file = new java.io.File(downloadDir, "nekogram_crash.txt");
+                    java.io.PrintWriter pw = new java.io.PrintWriter(new java.io.FileWriter(file));
+                    exception.printStackTrace(pw);
+                    pw.flush();
+                    pw.close();
+                }
+            } catch (Throwable ignored) {}
+        });
+        try {
+            FirebaseFix.check(base);
+        } catch (Throwable ignored) {}
     }
 
     public static ILocationServiceProvider getLocationServiceProvider() {
@@ -339,8 +354,8 @@ public class ApplicationLoader extends Application {
 
         try {
             ConnectionsManager.native_setJava(false);
-        } catch (UnsatisfiedLinkError error) {
-            throw new RuntimeException("can't load native libraries " +  Build.CPU_ABI + " lookup folder " + NativeLoader.getAbiFolder());
+        } catch (Throwable error) {
+            FileLog.e("can't load native libraries " +  Build.CPU_ABI + " lookup folder " + NativeLoader.getAbiFolder(), error);
         }
         new ForegroundDetector(this) {
             @Override

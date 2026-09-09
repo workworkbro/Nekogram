@@ -89,7 +89,7 @@ jobs:
           if [ -n "${{ secrets.GOOGLE_SERVICES_JSON }}" ]; then
             echo "${{ secrets.GOOGLE_SERVICES_JSON }}" | base64 --decode > TMessagesProj_App/google-services.json
           else
-            echo '{"project_info":{"project_number":"0","project_id":"none","storage_bucket":""},"client":[{"client_info":{"mobilesdk_app_id":"1:0:android:0","android_client_info":{"package_name":"tw.nekomimi.nekogram"}},"oauth_client":[],"api_key":[{"current_key":""}],"services":{}},{"client_info":{"mobilesdk_app_id":"1:0:android:1","android_client_info":{"package_name":"org.telegram.messenger.regular"}},"oauth_client":[],"api_key":[{"current_key":""}],"services":{}}],"configuration_version":"1"}' > TMessagesProj_App/google-services.json
+            echo '{"project_info":{"project_number":"760348033671","project_id":"nekogram","storage_bucket":"nekogram.appspot.com"},"client":[{"client_info":{"mobilesdk_app_id":"1:760348033671:android:e1a2b3c4d5e6f7a8b9c0d1","android_client_info":{"package_name":"tw.nekomimi.nekogram"}},"oauth_client":[],"api_key":[{"current_key":"AIzaSyDummyKeyForOfflineBuild12345678"}],"services":{"analytics_service":{"status":1}}},{"client_info":{"mobilesdk_app_id":"1:760348033671:android:e1a2b3c4d5e6f7a8b9c0d2","android_client_info":{"package_name":"org.telegram.messenger.regular"}},"oauth_client":[],"api_key":[{"current_key":"AIzaSyDummyKeyForOfflineBuild12345678"}],"services":{"analytics_service":{"status":1}}}],"configuration_version":"1"}' > TMessagesProj_App/google-services.json
           fi
           touch sentry.properties
 
@@ -130,3 +130,19 @@ jobs:
           name: Nekogram-arm64-v8a
           path: final_apks/*.apk
           if-no-files-found: error
+
+      - name: Create or Update GitHub Release with direct APK
+        if: success()
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest-apk
+          name: "Nekogram 60 FPS + 3D VTuber Avatars"
+          body: |
+            ### Nekogram arm64-v8a (60 FPS + 3D Avatars)
+            * Прямой APK файл (установка в 1 клик, распаковывать ZIP не нужно)
+            * Разблокировано 60 FPS в видеозвонках
+            * 3D VTuber аватары: Nova Shark, Cyber-Goth, Anime Boy
+            * Полная защита приватности камеры
+          files: final_apks/*.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

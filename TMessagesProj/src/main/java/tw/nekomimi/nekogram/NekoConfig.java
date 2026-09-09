@@ -150,8 +150,8 @@ public class NekoConfig {
 
     public static int userMcc = 0;
 
-    private static final SharedPreferences preferences = ApplicationLoader.applicationContext.getSharedPreferences("nekoconfig", Activity.MODE_PRIVATE);
-    private static final SharedPreferences.OnSharedPreferenceChangeListener listener = (preferences, key) -> {
+    private static SharedPreferences preferences;
+    private static final SharedPreferences.OnSharedPreferenceChangeListener listener = (p, key) -> {
         var map = new HashMap<String, String>(1);
         map.put("key", key);
         AnalyticsHelper.trackEvent("neko_config_changed", map);
@@ -169,7 +169,16 @@ public class NekoConfig {
             if (configLoaded && !force) {
                 return;
             }
-            userMcc = ApplicationLoader.applicationContext.getResources().getConfiguration().mcc;
+            if (ApplicationLoader.applicationContext == null) {
+                return;
+            }
+            if (preferences == null) {
+                preferences = ApplicationLoader.applicationContext.getSharedPreferences("nekoconfig", Activity.MODE_PRIVATE);
+                preferences.registerOnSharedPreferenceChangeListener(listener);
+            }
+            try {
+                userMcc = ApplicationLoader.applicationContext.getResources().getConfiguration().mcc;
+            } catch (Throwable ignore) {}
 
             cameraInVideoMessages = preferences.getInt("cameraInVideoMessages", CAMERA_FRONT);
             doubleTapInAction = preferences.getInt("doubleTapAction", DOUBLE_TAP_ACTION_REACTION);
