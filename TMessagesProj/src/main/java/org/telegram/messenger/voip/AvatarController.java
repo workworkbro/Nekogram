@@ -72,8 +72,8 @@ public class AvatarController {
         void onAvatarChanged();
     }
 
-    private boolean avatarEnabled = true;
-    private int selectedModelIndex = 0;
+    private volatile boolean avatarEnabled = true;
+    private volatile int selectedModelIndex = 0;
     private String customModelPath = null;
     private final List<AvatarModel> models = new ArrayList<>();
     private final List<AvatarChangeListener> listeners = new ArrayList<>();
@@ -159,9 +159,9 @@ public class AvatarController {
 
     private void initModels() {
         models.clear();
-        models.add(new AvatarModel("nova_shark", "Нова (Shark Skin)", "avatars/nova_shark.glb", "avatars/nova_shark.png", false));
         models.add(new AvatarModel("vtuber_cybergoth", "Кибер-гот витубер", "avatars/vtuber_cybergoth.vrm", "avatars/vtuber_cybergoth.png", false));
         models.add(new AvatarModel("vtuber_animeboy", "Парень в худи", "avatars/vtuber_animeboy.vrm", "avatars/vtuber_animeboy.png", false));
+        models.add(new AvatarModel("nova_shark", "Нова (Shark Skin)", "avatars/nova_shark.glb", "avatars/nova_shark.png", false));
     }
 
     private void loadSettings() {
@@ -171,6 +171,9 @@ public class AvatarController {
                 SharedPreferences prefs = ctx.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
                 avatarEnabled = prefs.getBoolean(KEY_ENABLED, true);
                 selectedModelIndex = prefs.getInt(KEY_MODEL_INDEX, 0);
+                if (selectedModelIndex < 0 || selectedModelIndex >= models.size()) {
+                    selectedModelIndex = 0;
+                }
                 customModelPath = prefs.getString(KEY_CUSTOM_PATH, null);
                 if (customModelPath != null && new File(customModelPath).exists()) {
                     models.add(new AvatarModel("custom", "Пользовательская", customModelPath, null, true));
@@ -413,12 +416,36 @@ public class AvatarController {
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
     }
 
-    private int getAvatarTexture(int modelIndex) {
+    private Bitmap loadBitmapFromAsset(String assetName) {
+        try {
+            Context ctx = ApplicationLoader.applicationContext;
+            if (ctx == null) return null;
+            InputStream is = ctx.getAssets().open(assetName);
+            java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+            byte[] buf = new byte[16384];
+            int r;
+            while ((r = is.read(buf)) != -1) {
+                baos.write(buf, 0, r);
+            }
+            is.close();
+            byte[] bytes = baos.toByteArray();
+            BitmapFactory.Options opts = new BitmapFactory.Options();
+            opts.inPreferredConfig = Bitmap.Config.ARGB_8888;
+            opts.inPremultiplied = true;
+            return BitmapFactory.decodeByteArray(bytes, 0, bytes.length, opts);
+        } catch (Throwable e) {
+            FileLog.e("AvatarController loadBitmapFromAsset error (" + assetName + "): " + e.getMessage());
+            return null;
+        }
+    }
+
+    private synchronized int getAvatarTexture(int modelIndex) {
         if (modelIndex < 0 || modelIndex >= models.size()) {
             modelIndex = 0;
         }
-        if (modelTextures.containsKey(modelIndex)) {
-            return modelTextures.get(modelIndex);
+        Integer cached = modelTextures.get(modelIndex);
+        if (cached != null && cached != 0) {
+            return cached;
         }
 
         AvatarModel model = models.get(modelIndex);
@@ -427,18 +454,7 @@ public class AvatarController {
             assetName = "avatars/" + model.id + ".png";
         }
 
-        Bitmap bitmap = null;
-        try {
-            Context ctx = ApplicationLoader.applicationContext;
-            if (ctx != null) {
-                InputStream is = ctx.getAssets().open(assetName);
-                bitmap = BitmapFactory.decodeStream(is);
-                is.close();
-            }
-        } catch (Exception e) {
-            FileLog.e("AvatarController getAvatarTexture load error (" + assetName + "): " + e.getMessage());
-        }
-
+        Bitmap bitmap = loadBitmapFromAsset(assetName);
         if (bitmap != null) {
             int[] tex = new int[1];
             GLES20.glGenTextures(1, tex, 0);
@@ -451,9 +467,20 @@ public class AvatarController {
             bitmap.recycle();
 
             modelTextures.put(modelIndex, tex[0]);
+            FileLog.d("AvatarController successfully cached texture for model " + modelIndex + ": " + model.name);
             return tex[0];
+        } else {
+            FileLog.e("AvatarController failed to load bitmap for " + assetName);
         }
         return 0;
+    }
+
+    private void preloadTextures() {
+        for (int i = 0; i < models.size(); i++) {
+            if (!modelTextures.containsKey(i)) {
+                getAvatarTexture(i);
+            }
+        }
     }
 
     private void drawAvatar(int width, int height) {
@@ -470,6 +497,13 @@ public class AvatarController {
 
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, offscreenFboId);
         GLES20.glViewport(0, 0, width, height);
+
+        // Always clear the framebuffer color to clean dark space
+        GLES20.glClearColor(0.06f, 0.08f, 0.12f, 1.0f);
+        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+
+        // Preload all avatars into textures if not loaded yet
+        preloadTextures();
 
         // 1. Render stylish dark gradient background
         GLES20.glDisable(GLES20.GL_BLEND);
@@ -489,7 +523,8 @@ public class AvatarController {
         }
 
         // 2. Render selected 3D VTuber avatar with live animations
-        int avatarTex = getAvatarTexture(selectedModelIndex);
+        int currentModel = selectedModelIndex;
+        int avatarTex = getAvatarTexture(currentModel);
         if (avatarTex != 0 && avatarProgram != 0) {
             GLES20.glEnable(GLES20.GL_BLEND);
             GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
@@ -514,26 +549,35 @@ public class AvatarController {
             GLES20.glUniform1f(alphaLoc, 1.0f);
 
             // Compute transformation matrix
-            float aspect = (float) width / (float) height;
             float[] projMatrix = new float[16];
-            android.opengl.Matrix.orthoM(projMatrix, 0, -aspect, aspect, -1f, 1f, -1f, 1f);
+            android.opengl.Matrix.setIdentityM(projMatrix, 0);
 
             float[] modelMatrix = new float[16];
             android.opengl.Matrix.setIdentityM(modelMatrix, 0);
 
             // Dynamic live 60 FPS breathing and tracking animations
             long now = SystemClock.uptimeMillis();
-            float breath = (float) Math.sin(now * 0.003) * 0.015f;
-            float sway = (float) Math.sin(now * 0.0015) * 0.02f + (headYaw * 0.004f);
-            float bob = (float) Math.cos(now * 0.002) * 0.01f + (headPitch * 0.004f);
-            float roll = (float) Math.sin(now * 0.001) * 1.2f + (headRoll * 0.3f);
+            float breath = (float) Math.sin(now * 0.003) * 0.012f;
+            float sway = (float) Math.sin(now * 0.0015) * 0.015f + (headYaw * 0.003f);
+            float bob = (float) Math.cos(now * 0.002) * 0.008f + (headPitch * 0.003f);
+            float roll = (float) Math.sin(now * 0.001) * 0.8f + (headRoll * 0.2f);
 
             // Center avatar and frame chest/head like a live streamer
-            android.opengl.Matrix.translateM(modelMatrix, 0, sway, -0.1f + bob + breath, 0f);
+            android.opengl.Matrix.translateM(modelMatrix, 0, sway, bob + breath, 0f);
             android.opengl.Matrix.rotateM(modelMatrix, 0, roll, 0f, 0f, 1f);
 
-            float scale = 1.35f;
-            android.opengl.Matrix.scaleM(modelMatrix, 0, scale * (1f + breath * 0.5f), scale * (1f + breath), 1.0f);
+            // Maintain exact aspect ratio without distortion
+            float texAspect = 720f / 1280f;
+            float vpAspect = (float) width / (float) height;
+            float scale = 1.03f;
+            float scaleX = scale * (1f + breath * 0.01f);
+            float scaleY = scale * (1f + breath * 0.01f);
+            if (vpAspect > texAspect) {
+                scaleX *= (texAspect / vpAspect);
+            } else {
+                scaleY *= (vpAspect / texAspect);
+            }
+            android.opengl.Matrix.scaleM(modelMatrix, 0, scaleX, scaleY, 1.0f);
 
             float[] mvpMatrix = new float[16];
             android.opengl.Matrix.multiplyMM(mvpMatrix, 0, projMatrix, 0, modelMatrix, 0);
