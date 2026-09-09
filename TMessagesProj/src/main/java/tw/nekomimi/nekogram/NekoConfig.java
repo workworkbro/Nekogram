@@ -99,7 +99,7 @@ public class NekoConfig {
     public static boolean hideBottomNavigationBar = false;
     public static boolean hideChannelBottomButtons = false;
     public static boolean hideKeyboardOnChatScroll = false;
-    public static boolean hideStories = false;
+    public static boolean hideStories = true;
     public static boolean hideTimeOnSticker = false;
     public static boolean ignoreBlocked = false;
     public static boolean ignoreContentRestriction = false;
@@ -205,7 +205,7 @@ public class NekoConfig {
             hideBottomNavigationBar = preferences.getBoolean("hideBottomNavigationBar", false);
             hideChannelBottomButtons = preferences.getBoolean("hideChannelBottomButtons", false);
             hideKeyboardOnChatScroll = preferences.getBoolean("hideKeyboardOnChatScroll", false);
-            hideStories = preferences.getBoolean("hideStories", false);
+            hideStories = preferences.getBoolean("hideStories", true);
             hideTimeOnSticker = preferences.getBoolean("hideTimeOnSticker", false);
             ignoreBlocked = preferences.getBoolean("ignoreBlocked2", false);
             ignoreContentRestriction = preferences.getBoolean("ignoreContentRestriction", false);

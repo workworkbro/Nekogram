@@ -32,37 +32,9 @@ public class AnalyticsHelper {
     public static String userId = null;
 
     public static void start(Application application) {
-        preferences = application.getSharedPreferences("nekoanalytics", Application.MODE_PRIVATE);
-        analyticsDisabled = !Extra.FORCE_ANALYTICS && preferences.getBoolean("analyticsDisabled", false);
-        sendBugReport = Extra.FORCE_ANALYTICS || preferences.getBoolean("sendBugReport", true);
-        if (analyticsDisabled) {
-            FileLog.d("Analytics: userId = disabled");
-            return;
-        }
-        userId = preferences.getString("userId", null);
-        if (userId == null || userId.length() < 32) {
-            preferences.edit().putString("userId", userId = generateUserID()).apply();
-        }
-        firebaseAnalytics = FirebaseAnalytics.getInstance(application);
-        firebaseAnalytics.setAnalyticsCollectionEnabled(true);
-        firebaseAnalytics.setUserId(userId);
-        SentryAndroid.init(application, options -> {
-            options.setDsn(Extra.SENTRY_DSN);
-            options.setEnvironment(BuildConfig.BUILD_TYPE);
-            options.setPrintUncaughtStackTrace(true);
-            options.setSendDefaultPii(true);
-            options.setEnableUserInteractionTracing(true);
-            options.setAttachViewHierarchy(true);
-            options.setEnableSystemEventBreadcrumbsExtras(true);
-            options.setTracesSampleRate(0.01);
-        });
-        var user = new User();
-        user.setId(userId);
-        Sentry.setUser(user);
-
-        if (BuildVars.LOGS_ENABLED) {
-            FileLog.d("Analytics: userId = " + userId);
-        }
+        analyticsDisabled = true;
+        sendBugReport = false;
+        FileLog.d("Analytics: disabled for performance and privacy");
     }
 
     private static String generateUserID() {
